@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pikofyz Elo Systém</title>
+    <meta name="description" content="Nástroj na evidenciu Elo hodnotenia pre účastníkov Pikofyzu.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Firebase Compat SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-database-compat.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header>
+            <h1>Elo Systém <span>Pikofyz</span></h1>
+            <nav>
+                <button class="tab-btn active" data-tab="tab-match">Súboj</button>
+                <button class="tab-btn" data-tab="tab-history">História</button>
+                <button class="tab-btn" data-tab="tab-leaderboard">Leaderboard</button>
+                <button class="tab-btn" data-tab="tab-admin">Admin</button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- SÚBOJ TAB -->
+            <section id="tab-match" class="tab-content active">
+                <h2>Zadať nový súboj</h2>
+                <div class="match-form card">
+                    <div class="player-select-wrapper">
+                        <label for="player1">Hráč 1</label>
+                        <select id="player1">
+                            <option value="">Vyber hráča...</option>
+                        </select>
+                        <div id="player1-info" class="player-info">Elo: -</div>
+                    </div>
+                    
+                    <div class="vs-badge">VS</div>
+                    
+                    <div class="player-select-wrapper">
+                        <label for="player2">Hráč 2</label>
+                        <select id="player2">
+                            <option value="">Vyber hráča...</option>
+                        </select>
+                        <div id="player2-info" class="player-info">Elo: -</div>
+                    </div>
+                    
+                    <div class="winner-selection">
+                        <p>Kto vyhral?</p>
+                        <div class="winner-buttons">
+                            <button id="btn-win-1" class="win-btn">Výhra Hráč 1</button>
+                            <button id="btn-draw" class="draw-btn">Remíza</button>
+                            <button id="btn-win-2" class="win-btn">Výhra Hráč 2</button>
+                        </div>
+                    </div>
+
+                    <button id="submit-match" class="primary-btn" disabled>Zaznamenať výsledok</button>
+                </div>
+            </section>
+
+            <!-- HISTÓRIA TAB -->
+            <section id="tab-history" class="tab-content">
+                <h2>História zápasov</h2>
+                <div class="card">
+                    <ul id="history-list" class="history-list">
+                        <!-- Tu sa vložia zápasy -->
+                    </ul>
+                </div>
+            </section>
+
+            <!-- LEADERBOARD TAB -->
+            <section id="tab-leaderboard" class="tab-content">
+                <h2>Leaderboard</h2>
+                
+                <div class="leaderboard-grid">
+                    <div class="card players-card">
+                        <h3>Poradie hráčov</h3>
+                        <table class="leaderboard-table" id="players-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Meno</th>
+                                    <th>Skupina</th>
+                                    <th>Elo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Tu sa vložia hráči -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="card groups-card">
+                        <h3>Priemer Elo podľa skupín</h3>
+                        <div id="groups-list" class="groups-list">
+                            <!-- Tu sa vložia skupiny -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ADMIN TAB -->
+            <section id="tab-admin" class="tab-content">
+                <h2>Admin panel</h2>
+                <div class="admin-grid">
+                    
+                    <div class="card admin-action-card">
+                        <h3>Zrušiť posledný zápas</h3>
+                        <p>Vráti Elo obom hráčom na stav pred posledným zápasom a zmaže ho z histórie.</p>
+                        <button id="undo-match-btn" class="warning-btn">Zmazať posledný zápas</button>
+                    </div>
+
+                    <div class="card admin-action-card">
+                        <h3>Manuálna úprava Ela</h3>
+                        <div class="form-group">
+                            <label for="admin-player-select">Hráč</label>
+                            <select id="admin-player-select">
+                                <option value="">Vyber hráča...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-elo-input">Nové Elo</label>
+                            <input type="number" id="admin-elo-input" placeholder="Zadaj Elo">
+                        </div>
+                        <button id="update-elo-btn" class="primary-btn" disabled>Uložiť zmenu</button>
+                    </div>
+
+                    <div class="card admin-action-card">
+                        <h3>Nastavenia výpočtu Elo</h3>
+                        <div class="form-group">
+                            <label for="admin-k-input">Konštanta K</label>
+                            <input type="number" id="admin-k-input" value="75">
+                        </div>
+                        <div class="form-group">
+                            <label for="admin-scale-input">Konštanta delenia (škála)</label>
+                            <input type="number" id="admin-scale-input" value="400">
+                        </div>
+                        <button id="update-settings-btn" class="primary-btn">Uložiť nastavenia</button>
+                    </div>
+
+                    <div class="card admin-action-card danger-zone">
+                        <h3>Nebezpečná zóna</h3>
+                        <p>Kompletne vymaže všetky zápasy a zresetuje Elo všetkých hráčov na 1000. Hráči a skupiny ostanú zachovaní.</p>
+                        <button id="reset-db-btn" class="danger-btn">Resetovať databázu (Elo 1000)</button>
+                    </div>
+
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Správa</div>
+
+    <script src="app.js"></script>
+</body>
+</html>
