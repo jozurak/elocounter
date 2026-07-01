@@ -57,6 +57,11 @@ const btnWin2 = document.getElementById('btn-win-2');
 const btnDraw = document.getElementById('btn-draw');
 const submitMatchBtn = document.getElementById('submit-match');
 
+const matchEntryForm = document.getElementById('match-entry-form');
+const matchResultSummary = document.getElementById('match-result-summary');
+const summaryDetails = document.getElementById('summary-details');
+const nextMatchBtn = document.getElementById('next-match-btn');
+
 // History & Leaderboard
 const historyList = document.getElementById('history-list');
 const playersTable = document.querySelector('#players-table tbody');
@@ -182,6 +187,21 @@ function setupEventListeners() {
     btnDraw.addEventListener('click', () => selectResult('draw'));
 
     submitMatchBtn.addEventListener('click', handleSubmitMatch);
+
+    nextMatchBtn.addEventListener('click', () => {
+        // Reset form
+        player1Select.value = "";
+        player2Select.value = "";
+        btnWin1.classList.remove('selected');
+        btnWin2.classList.remove('selected');
+        btnDraw.classList.remove('selected');
+        selectedResult = null;
+        validateMatchForm();
+        updateSelectedPlayersInfo();
+        
+        matchResultSummary.style.display = 'none';
+        matchEntryForm.style.display = 'flex';
+    });
 
     // Admin
     undoMatchBtn.addEventListener('click', handleUndoLastMatch);
@@ -329,18 +349,32 @@ async function handleSubmitMatch() {
 
     await db.ref().update(updates);
     
-    // Reset form
-    player1Select.value = "";
-    player2Select.value = "";
-    btnWin1.classList.remove('selected');
-    btnWin2.classList.remove('selected');
-    btnDraw.classList.remove('selected');
-    selectedResult = null;
-    validateMatchForm();
-    updateSelectedPlayersInfo();
+    const formatChange = (change) => {
+        if(change > 0) return `<span class="elo-plus" style="color: var(--success-color); font-weight: bold;">+${change}</span>`;
+        if(change < 0) return `<span class="elo-minus" style="color: var(--danger-color); font-weight: bold;">${change}</span>`;
+        return `<span class="elo-zero" style="color: var(--draw-color); font-weight: bold;">0</span>`;
+    };
+
+    summaryDetails.innerHTML = `
+        <div style="display: flex; justify-content: space-around; align-items: center; background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 1rem;">
+            <div>
+                <div style="font-weight: bold; font-size: 1.4rem;">${p1.name}</div>
+                <div style="font-size: 1.8rem; margin: 0.5rem 0;">${formatChange(eloChange1)}</div>
+                <div style="color: var(--text-secondary);">Nové Elo: ${p1.elo + eloChange1}</div>
+            </div>
+            <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-secondary);">VS</div>
+            <div>
+                <div style="font-weight: bold; font-size: 1.4rem;">${p2.name}</div>
+                <div style="font-size: 1.8rem; margin: 0.5rem 0;">${formatChange(eloChange2)}</div>
+                <div style="color: var(--text-secondary);">Nové Elo: ${p2.elo + eloChange2}</div>
+            </div>
+        </div>
+    `;
+
+    matchEntryForm.style.display = 'none';
+    matchResultSummary.style.display = 'block';
     
     showToast("Zápas úspešne zaznamenaný!");
-    tabBtns[1].click(); // Prepni na Históriu
 }
 
 async function handleUndoLastMatch() {
